@@ -55,7 +55,7 @@ def main(args):
         bad_arguments: bool = False
         if len(args) >= 4:
             msg = f"{args[1]} {args[2]} {args[3]} {args[4] if len(args) > 4 else ''} {args[5] if len(args) > 5 else ''}"
-            debug_enabled = (len(args) > 4 and args[4] == "debug)
+            debug_enabled = (len(args) > 4 and args[4] == "debug")
         else:
             msg = "# ERROR: Wrong arguments"
             bad_arguments = True
