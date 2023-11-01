@@ -149,49 +149,50 @@ def generate_msg(alert_json: any, options: any) -> any:
             The JSON message to send
     """
 
+    alert = json.loads(alert_json)
+    _alert_level = alert_json["rule"]["level"]
+
     # colors from https://gist.github.com/thomasbnt/b6f455e2c7d743b796917fa3c205f812
-    if(alert_level < 5):
+    if(_alert_level < 5):
         # green
-        color = "5763719"
-    elif(alert_level >= 5 and alert_level <= 7):
+        _color = "5763719"
+    elif(_alert_level >= 5 and _alert_level <= 7):
         # yellow
-        color = "16705372"
+        _color = "16705372"
     else:
         # red
-        color = "15548997"
+        _color = "15548997"
     
-    # agent details
-    if "agentless" in alert:
-        agent_ = "agentless"
-    else:
-        agent_ = alert["agent"]["name"]
+    msg                 = {}
+    msg['color']        = _color
+    msg['pretext']      = "WAZUH Alert"
+    msg['title']        = alert['rule']['description'] if 'description' in alert['rule'] else msg['pretext']
+    msg['text']         = alert.get('full_log')
+    msg['timestamp']    = alert['id']
+    
+    msg['fields']       = []
 
-    msg             = {}
-    msg['color']    = color
-    msg['pretext']  = "WAZUH Alert"
-    msg['title']    = alert['rule']['description'] if 'description' in alert['rule'] else "N/A"
-    msg['text']     = alert.get('full_log')
-    msg['ts']       = alert['id']
-    
-    msg['fields']   = []
+    if 'agent' in alert:
         msg['fields'].append({
-            "title": "Agent",
-            "value": "({0}) - {1}".format(
-            ),
+            "name": "Agent",
+            "value": f"({alert['agent']['id']}) - {alert['agent']['name']}",
+            "inline": True
         })
     if 'agentless' in alert:
         msg['fields'].append({
-            "title": "Agentless Host",
+            "name": "Agentless Host",
             "value": alert['agentless']['host'],
+            "inline": True
         })
-    msg['fields'].append({"title": "Location", "value": alert['location']})
+    msg['fields'].append({"name": "Location", "value": alert['location'], "inline": True})
     msg['fields'].append({
-        "title": "Rule ID",
-        "value": "{0} _(Level {1})_".format(alert['rule']['id'], alert_level),
+        "name": "Rule ID",
+        "value": f"{alert['rule']['id']} _(Level {alert_level})_"
+        "inline": True
     })
 
     
-
+    # TODO check if this works
     if(options):
         msg.update(options)
 
@@ -200,68 +201,17 @@ def generate_msg(alert_json: any, options: any) -> any:
         "content": "",
         "embeds": [
             {
-                "title": f"{msg['pretext']} - Rule {alert['rule']['id']}",
+                "title": msg["title"],
                     "color": msg["color"],
                     "description": alert["rule"]["description"],
-                    "fields": [{
-                            "name": "Agent",
-                            "value": agent_,
-                            "inline": True
-                            }]
+                    "fields": [field for field in msg[fields]]
+                    #[{ "name": "Agent", "value": agent_, "inline": True }]
             }
         ]
     }
     
     return json.dumps(payload)
     
-
-    
-# read configuration
-alert_file = sys.argv[1]
-user = sys.argv[2].split(":")[0]
-hook_url = sys.argv[3]
-
-# read alert file
-with open(alert_file) as f:
-    alert_json = json.loads(f.read())
-
-# extract alert fields
-alert_level = alert_json["rule"]["level"]
-
-# colors from https://gist.github.com/thomasbnt/b6f455e2c7d743b796917fa3c205f812
-if(alert_level < 5):
-    # green
-    color = "5763719"
-elif(alert_level >= 5 and alert_level <= 7):
-    # yellow
-    color = "16705372"
-else:
-    # red
-    color = "15548997"
-
-
-<<<<<<< Updated upstream
-# combine message details
-payload = json.dumps({
-    "content": "",
-    "embeds": [
-        {
-		    "title": f"Wazuh Alert - Rule {alert_json['rule']['id']}",
-				"color": color,
-				"description": alert_json["rule"]["description"],
-				"fields": [{
-                        # TODO: each field item is a subheadline + content following it 
-                        # -> turn this into a dictionary/tuple/frozenset? and read each one in a for loop?
-						"name": "Agent",
-						"value": agent_,
-						"inline": True
-						}]
-        }
-    ]
-})
-
-# send message to discord
-
 def send_msg(msg: str, url: str) -> None:
     """
         Send the message to the API
@@ -276,10 +226,6 @@ def send_msg(msg: str, url: str) -> None:
     headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
     res     = requests.post(url, data=msg, headers=headers)
     debug(f"# Response received: {res.json}")
-=======
-
-# send message to discord
-r = requests.post(hook_url, data=payload, headers={"content-type": "application/json"})
 
 
 
@@ -344,4 +290,3 @@ def get_json_options(file_location: str) -> any:
 
 if __name__ == "__main__":
     main(sys.argv)
->>>>>>> Stashed changes
