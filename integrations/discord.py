@@ -113,7 +113,7 @@ def process_args(args) -> None:
         debug("# ERROR: Empty message")
         raise Exception
 
-    debug(f"# Sending message {msg} to Slack server")
+    debug(f"# Sending message {msg} to Discord server")
     send_msg(msg, webhook)
 
 
@@ -234,6 +234,8 @@ payload = json.dumps({
 				"color": color,
 				"description": alert_json["rule"]["description"],
 				"fields": [{
+                        # TODO: each field item is a subheadline + content following it 
+                        # -> turn this into a dictionary/tuple/frozenset? and read each one in a for loop?
 						"name": "Agent",
 						"value": agent_,
 						"inline": True
@@ -243,5 +245,18 @@ payload = json.dumps({
 })
 
 # send message to discord
-r = requests.post(hook_url, data=payload, headers={"content-type": "application/json"})
-sys.exit(0)
+
+def send_msg(msg: str, url: str) -> None:
+    """
+        Send the message to the API
+
+        Parameters
+        ----------
+        msg : str
+            JSON message.
+        url: str
+            URL of the API.
+    """
+    headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
+    res     = requests.post(url, data=msg, headers=headers)
+    debug(f"# Response received: {res.json}")
