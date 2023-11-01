@@ -132,7 +132,7 @@ def debug(msg: str) -> None:
         with open(LOG_FILE, "a") as f:
             f.write(msg + '\n')
 
-def generate_msg(alert: any, options: any) -> any:
+def generate_msg(alert_json: any, options: any) -> any:
     """
         Generate the JSON object with the message to be send
 
@@ -148,7 +148,6 @@ def generate_msg(alert: any, options: any) -> any:
         msg: str
             The JSON message to send
     """
-    level           = alert['rule']['level']
 
     # colors from https://gist.github.com/thomasbnt/b6f455e2c7d743b796917fa3c205f812
     if(alert_level < 5):
@@ -160,20 +159,24 @@ def generate_msg(alert: any, options: any) -> any:
     else:
         # red
         color = "15548997"
-        
+    
+    # agent details
+    if "agentless" in alert:
+        agent_ = "agentless"
+    else:
+        agent_ = alert["agent"]["name"]
+
     msg             = {}
     msg['color']    = color
     msg['pretext']  = "WAZUH Alert"
     msg['title']    = alert['rule']['description'] if 'description' in alert['rule'] else "N/A"
     msg['text']     = alert.get('full_log')
-
+    msg['ts']       = alert['id']
+    
     msg['fields']   = []
-    if 'agent' in alert:
         msg['fields'].append({
             "title": "Agent",
             "value": "({0}) - {1}".format(
-                alert['agent']['id'],
-                alert['agent']['name']
             ),
         })
     if 'agentless' in alert:
@@ -184,18 +187,35 @@ def generate_msg(alert: any, options: any) -> any:
     msg['fields'].append({"title": "Location", "value": alert['location']})
     msg['fields'].append({
         "title": "Rule ID",
-        "value": "{0} _(Level {1})_".format(alert['rule']['id'], level),
+        "value": "{0} _(Level {1})_".format(alert['rule']['id'], alert_level),
     })
 
-    msg['ts']       = alert['id']
+    
 
     if(options):
         msg.update(options)
 
-    attach = {'attachments': [msg]}
+    # combine message details
+    payload = {
+        "content": "",
+        "embeds": [
+            {
+                "title": f"{msg['pretext']} - Rule {alert['rule']['id']}",
+                    "color": msg["color"],
+                    "description": alert["rule"]["description"],
+                    "fields": [{
+                            "name": "Agent",
+                            "value": agent_,
+                            "inline": True
+                            }]
+            }
+        ]
+    }
+    
+    return json.dumps(payload)
+    
 
-    return json.dumps(attach)
-
+    
 # read configuration
 alert_file = sys.argv[1]
 user = sys.argv[2].split(":")[0]
@@ -219,12 +239,8 @@ else:
     # red
     color = "15548997"
 
-# agent details
-if "agentless" in alert_json:
-	  agent_ = "agentless"
-else:
-    agent_ = alert_json["agent"]["name"]
 
+<<<<<<< Updated upstream
 # combine message details
 payload = json.dumps({
     "content": "",
@@ -260,3 +276,72 @@ def send_msg(msg: str, url: str) -> None:
     headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
     res     = requests.post(url, data=msg, headers=headers)
     debug(f"# Response received: {res.json}")
+=======
+
+# send message to discord
+r = requests.post(hook_url, data=payload, headers={"content-type": "application/json"})
+
+
+
+def get_json_alert(file_location: str) -> any:
+    """
+        Read JSON alert object from file
+
+        Parameters
+        ----------
+        file_location : str
+            Path to the JSON file location.
+
+        Returns
+        -------
+        {}: any
+            The JSON object read it.
+
+        Raises
+        ------
+        FileNotFoundError
+            If no JSON file is found.
+        JSONDecodeError
+            If no valid JSON file are used
+    """
+    try:
+        with open(file_location) as alert_file:
+            return json.load(alert_file)
+    except FileNotFoundError:
+        debug("# JSON file for alert %s doesn't exist" % file_location)
+        sys.exit(ERR_FILE_NOT_FOUND)
+    except json.decoder.JSONDecodeError as e:
+        debug("Failed getting JSON alert. Error: %s" % e)
+        sys.exit(ERR_INVALID_JSON)
+
+def get_json_options(file_location: str) -> any:
+    """
+        Read JSON options object from file
+
+        Parameters
+        ----------
+        file_location : str
+            Path to the JSON file location.
+
+        Returns
+        -------
+        {}: any
+            The JSON object read it.
+
+        Raises
+        ------
+        JSONDecodeError
+            If no valid JSON file are used
+    """
+    try:
+        with open(file_location) as options_file:
+            return json.load(options_file)
+    except FileNotFoundError:
+        debug("# JSON file for options %s doesn't exist" % file_location)
+    except BaseException as e:
+        debug("Failed getting JSON options. Error: %s" % e)
+        sys.exit(ERR_INVALID_JSON)
+
+if __name__ == "__main__":
+    main(sys.argv)
+>>>>>>> Stashed changes
