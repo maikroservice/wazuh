@@ -165,8 +165,8 @@ def generate_msg(alert_json: any, options: any) -> any:
     
     msg                 = {}
     msg['color']        = _color
-    msg['pretext']      = "WAZUH Alert"
-    msg['title']        = alert['rule']['description'] if 'description' in alert['rule'] else msg['pretext']
+    msg['pretext']      = "wazuh. Alert"
+    msg['description']  = alert['rule']['description'] if 'description' in alert['rule'] else msg['pretext']
     msg['text']         = alert.get('full_log')
     msg['timestamp']    = alert['id']
     
@@ -184,7 +184,7 @@ def generate_msg(alert_json: any, options: any) -> any:
             "value": alert['agentless']['host'],
             "inline": True
         })
-    msg['fields'].append({"name": "Location", "value": alert['location'], "inline": True})
+    msg['fields'].append({"name": "Location", "value": alert["location"], "inline": True})
     msg['fields'].append({
         "name": "Rule ID",
         "value": f"{alert['rule']['id']} _(Level {alert_level})_"
@@ -198,7 +198,7 @@ def generate_msg(alert_json: any, options: any) -> any:
 
     # combine message details
     payload = {
-        "content": "",
+        "content": msg["text"],
         "embeds": [
             {
                 "title": msg["title"],
