@@ -9,7 +9,7 @@ import json
 import os
 import pytest
 import requests
-import slack as slack
+import discord
 import sys
 from unittest.mock import patch, mock_open
 
@@ -44,11 +44,11 @@ alert_template = {
 options_template = {
     'pretext': 'Wazuh-X -- Alert generated',
     'author_name': 'The amazing Wazuh',
-    'footer': 'Slack API'
+    'footer': 'Discord API'
 }
 
 msg_template = '{"severity": 1, "pretext": "Wazuh-X -- Alert generated", "title": "alert description", "text": "full log.", ' \
-               '"rule_id": "rule-id", "timestamp": "year-month-dayThours:minuts:seconds+0000", "id": "alert_id", ' \
+               '"rule_id": "rule-id", "timestamp": "year-month-dayThours:minutes:seconds+0000", "id": "alert_id", ' \
                '"all_fields": {"timestamp": "2023-02-23T00:00:00+00:00", "rule": {"level": 0, ' \
                '"description": "alert description", "id": "rule-id", "firedtimes": 1}, "id": "alert_id", "full_log": ' \
                '"full log.", "decoder": {"name": "decoder-name"}, "location": "wazuh-X", "author_name": "The amazing Wazuh",'\
