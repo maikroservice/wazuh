@@ -149,6 +149,10 @@ def generate_msg(alert_json: any, options: any) -> any:
             The JSON message to send
     """
 
+    alert = json.loads(alert_json)
+
+    alert_level = alert['rule']['level']
+
     # colors from https://gist.github.com/thomasbnt/b6f455e2c7d743b796917fa3c205f812
     if(alert_level < 5):
         # green
@@ -174,9 +178,12 @@ def generate_msg(alert_json: any, options: any) -> any:
     msg['ts']       = alert['id']
     
     msg['fields']   = []
+    if 'agent' in alert_json:
         msg['fields'].append({
             "title": "Agent",
             "value": "({0}) - {1}".format(
+                alert_json['agent']['id'],
+                alert_json['agent']['name']
             ),
         })
     if 'agentless' in alert:
